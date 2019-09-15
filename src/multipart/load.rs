@@ -8,10 +8,10 @@ use tempfile::NamedTempFile;
 use actix_web::http::header::{DispositionType};
 use actix_web::web::BytesMut;
 
-//https://tools.ietf.org/html/rfc7578#section-1
-//`content-type` defaults to text/plain
-//However files must use appropriate MIME or application/octet-stream
-//`filename` should be included but is not a must
+// https://tools.ietf.org/html/rfc7578#section-1
+// `content-type` defaults to text/plain
+// However files must use appropriate MIME or application/octet-stream
+// `filename` should be included but is not a must
 
 pub struct MultipartFile {
     file: NamedTempFile,
@@ -30,36 +30,72 @@ pub enum MultipartField {
     Text(MultipartText),
 }
 
-pub fn load(multipart: Multipart, text_limit: usize, file_limit: u64) -> impl Future<Item = Vec<MultipartField>, Error = MultipartError> {
-    multipart.fold((Vec::new(), text_limit, file_limit), move |(mut fields, text_budget, file_budget), field| {
-        handle_field(field, text_budget, file_budget).map(|(field, text_budget, file_budget)| {
-            fields.insert(0, field);
-            (fields, text_budget, file_budget)
-        })
-    }).map(|k| {
-        k.0
-    })
+pub struct MultipartLoaderConfig {
+    text_limit: usize,
+    file_limit: u64,
 }
 
-fn handle_field(field: Field, text_budget: usize, file_budget: u64) -> Box<dyn Future<Item = (MultipartField, usize, u64), Error = MultipartError>> {
-    let cd = match field.content_disposition() {
-        Some(cd) => cd,
-        None => return Box::new(err(MultipartError::Parse(ParseError::Header))),
-    };
-    match cd.disposition {
-        DispositionType::FormData => {},
-        _ => return Box::new(err(MultipartError::Parse(ParseError::Header)))
+impl MultipartLoaderConfig {
+
+    pub fn text_limit(mut self, limit: usize) -> Self {
+        self.text_limit = limit;
+        self
     }
-    let name= match cd.get_name() {
-        Some(name) => name.to_owned(),
-        None => return Box::new(err(MultipartError::Parse(ParseError::Header))),
-    };
-    if field.content_type() == &mime::TEXT_PLAIN {
-        Box::new(create_text(field, name, text_budget).map(move |(text, remaining_text_budget)| (MultipartField::Text(text), remaining_text_budget, file_budget)))
-    } else {
-        let filename = cd.get_filename().map(|f| f.to_owned());
-        Box::new(create_file(field, name, filename, file_budget).map(move |(file, remaining_file_budget)| (MultipartField::File(file), text_budget, remaining_file_budget)))
+
+    pub fn file_limit(mut self, limit: u64) -> Self {
+        self.file_limit = limit;
+        self
     }
+
+}
+
+impl Default for MultipartLoaderConfig {
+    fn default() -> Self {
+        // Defaults are 1MB of text and 512MB of files
+        MultipartLoaderConfig { text_limit: 1 * 1024 * 1024, file_limit: 512 * 1024 * 1024 }
+    }
+}
+
+pub fn load(multipart: Multipart, config: MultipartLoaderConfig) -> impl Future<Item = Vec<MultipartField>, Error = MultipartError> {
+    multipart.fold((Vec::new(), config.text_limit, config.file_limit),
+                   move |(mut fields, text_budget, file_budget), field| {
+
+        let cd = match field.content_disposition() {
+            Some(cd) => cd,
+            None => return Either::A(err(MultipartError::Parse(ParseError::Header))),
+        };
+        match cd.disposition {
+            DispositionType::FormData => {},
+            _ => return Either::A(err(MultipartError::Parse(ParseError::Header)))
+        }
+        let name= match cd.get_name() {
+            Some(name) => name.to_owned(),
+            None => return Either::A(err(MultipartError::Parse(ParseError::Header))),
+        };
+
+        let result = if field.content_type() == &mime::TEXT_PLAIN {
+            Either::A(
+                create_text(field, name, text_budget).map(move |(text, reduced_text_budget)| {
+                    (MultipartField::Text(text), reduced_text_budget, file_budget)
+                })
+            )
+        } else {
+            let filename = cd.get_filename().map(|f| f.to_owned());
+            Either::B(
+                create_file(field, name, filename, file_budget).map(move |(file, reduced_file_budget)| {
+                    (MultipartField::File(file), text_budget, reduced_file_budget)
+                })
+            )
+        };
+
+        Either::B(
+            result.map(|(field, text_budget, file_budget)| {
+                fields.insert(0, field);
+                (fields, text_budget, file_budget)
+            })
+        )
+
+    }).map(|k| { k.0 })
 }
 
 // https://github.com/actix/examples/blob/master/multipart/src/main.rs
@@ -69,33 +105,31 @@ fn create_file(field: Field, name: String, filename: Option<String>, file_budget
         Err(e) => return Either::A(err(MultipartError::Payload(PayloadError::Io(e)))),
     };
     Either::B(
-        field
-            .fold((ntf, 0u64, file_budget), move |(file, written, budget), bytes| {
-                let length = bytes.len() as u64;
-                if file_budget < length {
-                    Either::A(err(MultipartError::Payload(PayloadError::Overflow)))
-                } else {
-                    Either::B(
-                        // fs operations are blocking, we have to execute writes on threadpool
-                        web::block(move || {
-                            file.as_file().write_all(bytes.as_ref()).map_err(|e| {
-                                MultipartError::Payload(PayloadError::Io(e))
-                            })?;
-                            let written = written + length;
-                            let remaining = budget - length;
-                            Ok((file, written, remaining))
-                        }).map_err(|e: BlockingError<MultipartError>| {
-                            match e {
-                                BlockingError::Error(e) => e,
-                                BlockingError::Canceled => MultipartError::Incomplete,
-                            }
-                        })
-                    )
-                }
-            })
-            .map(|(file, size, budget)| {
-                (MultipartFile { file, name, filename, size }, budget)
-            })
+        field.fold((ntf, 0u64, file_budget), move |(file, written, budget), bytes| {
+            let length = bytes.len() as u64;
+            if file_budget < length {
+                Either::A(err(MultipartError::Payload(PayloadError::Overflow)))
+            } else {
+                Either::B(
+                    // fs operations are blocking, we have to execute writes on threadpool
+                    web::block(move || {
+                        file.as_file().write_all(bytes.as_ref()).map_err(|e| {
+                            MultipartError::Payload(PayloadError::Io(e))
+                        })?;
+                        let written = written + length;
+                        let remaining = budget - length;
+                        Ok((file, written, remaining))
+                    }).map_err(|e: BlockingError<MultipartError>| {
+                        match e {
+                            BlockingError::Error(e) => e,
+                            BlockingError::Canceled => MultipartError::Incomplete,
+                        }
+                    })
+                )
+            }
+        }).map(|(file, size, budget)| {
+            (MultipartFile { file, name, filename, size }, budget)
+        })
     )
 }
 

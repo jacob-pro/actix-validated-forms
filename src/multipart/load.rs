@@ -13,6 +13,8 @@ use actix_web::web::BytesMut;
 // However files must use appropriate MIME or application/octet-stream
 // `filename` should be included but is not a must
 
+pub type MultipartForm = Vec<MultipartField>;
+
 pub struct MultipartFile {
     file: NamedTempFile,
     name: String,
@@ -56,7 +58,7 @@ impl Default for MultipartLoaderConfig {
     }
 }
 
-pub fn load(multipart: Multipart, config: MultipartLoaderConfig) -> impl Future<Item = Vec<MultipartField>, Error = MultipartError> {
+pub fn load(multipart: Multipart, config: MultipartLoaderConfig) -> impl Future<Item = MultipartForm, Error = MultipartError> {
     multipart.fold((Vec::new(), config.text_limit, config.file_limit),
                    move |(mut fields, text_budget, file_budget), field| {
 
@@ -107,7 +109,7 @@ fn create_file(field: Field, name: String, filename: Option<String>, file_budget
     Either::B(
         field.fold((ntf, 0u64, file_budget), move |(file, written, budget), bytes| {
             let length = bytes.len() as u64;
-            if file_budget < length {
+            if budget < length {
                 Either::A(err(MultipartError::Payload(PayloadError::Overflow)))
             } else {
                 Either::B(

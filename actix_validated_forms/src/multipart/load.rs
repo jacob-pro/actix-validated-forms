@@ -32,6 +32,7 @@ pub enum MultipartField {
     Text(MultipartText),
 }
 
+#[derive(Clone)]
 pub struct MultipartLoaderConfig {
     text_limit: usize,
     file_limit: u64,

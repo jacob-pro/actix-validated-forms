@@ -1,34 +1,61 @@
 #[cfg(test)]
 mod tests {
 
-    use tempfile::NamedTempFile;
+    use actix_validated_forms::multipart::{MultipartField, MultipartForm, MultipartText};
     use actix_validated_forms_derive::FromMultipart;
-    use actix_validated_forms::multipart::{MultipartForm, MultipartField, MultipartText};
     use std::convert::TryFrom;
 
-    //#[derive(FromMultipart, Debug)]
+    #[derive(FromMultipart, Debug)]
     struct Test {
         string: String,
-        optional_string: Option<String>,
+        none_string: Option<String>,
+        some_string: Option<String>,
         int: i32,
+        float: f64,
         int_array: Vec<i32>,
-        file: NamedTempFile,
-        optional_file: Option<NamedTempFile>,
-        file_array: NamedTempFile,
-    }
-
-    #[derive(FromMultipart, Debug)]
-    struct Two {
-        int: i32,
+        // file: MultipartFile,
+        // optional_file: Option<MultipartFile>,
+        // file_array: MultipartFile,
     }
 
     #[test]
     fn it_works() {
-        let mut multipart = MultipartForm::new();
-        multipart.push(MultipartField::Text(MultipartText{ name: "int".to_string(), text: "5".to_string() }));
-        let result = Two::try_from(multipart);
-        println!("{:?}", result);
+        let mut m = MultipartForm::new();
+        m.push(MultipartField::Text(MultipartText {
+            name: "string".to_string(),
+            text: "Hello World".to_string(),
+        }));
+        m.push(MultipartField::Text(MultipartText {
+            name: "some_string".to_string(),
+            text: "Hello World".to_string(),
+        }));
+        m.push(MultipartField::Text(MultipartText {
+            name: "int".to_string(),
+            text: "69".to_string(),
+        }));
+        m.push(MultipartField::Text(MultipartText {
+            name: "float".to_string(),
+            text: "-1.25".to_string(),
+        }));
+        m.push(MultipartField::Text(MultipartText {
+            name: "int_array".to_string(),
+            text: "2".to_string(),
+        }));
+        m.push(MultipartField::Text(MultipartText {
+            name: "int_array".to_string(),
+            text: "4".to_string(),
+        }));
+        m.push(MultipartField::Text(MultipartText {
+            name: "int_array".to_string(),
+            text: "6".to_string(),
+        }));
+        let result = Test::try_from(m).unwrap();
+
+        assert_eq!(result.string, "Hello World".to_string());
+        assert_eq!(result.none_string, None);
+        assert_eq!(result.some_string, Some("Hello World".to_string()));
+        assert_eq!(result.int, 69);
+        assert_eq!(result.float, -1.25);
+        assert_eq!(result.int_array, vec![2, 4, 6]);
     }
-
 }
-

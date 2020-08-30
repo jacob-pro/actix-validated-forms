@@ -20,9 +20,8 @@ pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
     let mut fields_vec_innards = quote!();
     for field in fields.named.iter() {
         let name = field.ident.as_ref().unwrap();
-        let ty = &field.ty;
         fields_vec_innards.extend(quote!(
-            #name: actix_validated_forms::multipart::MultipartType::get(&value, stringify!(#name))
+            #name: actix_validated_forms::multipart::MultipartType::get(&mut value, stringify!(#name))
             .map_err(|e| (stringify!(#name).to_string(), e))?,
         ));
     }
@@ -32,7 +31,7 @@ pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
 
             type Error = (String, actix_validated_forms::multipart::GetError);
 
-            fn try_from(value: actix_validated_forms::multipart::MultipartForm) -> Result<Self, Self::Error> {
+            fn try_from(mut value: actix_validated_forms::multipart::MultipartForm) -> Result<Self, Self::Error> {
                 let x = Self {
                     #fields_vec_innards
                 };

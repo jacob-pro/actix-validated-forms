@@ -1,27 +1,26 @@
+//mod extractor;
 mod load;
-mod extractor;
 
+//pub use extractor::*;
 pub use load::*;
-pub use extractor::*;
 
-use tempfile::NamedTempFile;
 use std::str::FromStr;
+use tempfile::NamedTempFile;
 
-#[derive(Debug)]
-pub struct MultipartForm(Vec<MultipartField>);
+pub type MultipartForm = Vec<MultipartField>;
 
 #[derive(Debug)]
 pub struct MultipartFile {
-    file: NamedTempFile,
-    name: String,
-    filename: Option<String>,
-    size: u64,
+    pub file: NamedTempFile,
+    pub name: String,
+    pub filename: Option<String>,
+    pub size: u64,
 }
 
 #[derive(Debug)]
 pub struct MultipartText {
-    name: String,
-    text: String,
+    pub name: String,
+    pub text: String,
 }
 
 #[derive(Debug)]
@@ -37,20 +36,31 @@ pub enum GetError {
     MultipleItems,
 }
 
-impl MultipartForm {
-    pub fn new(x: Vec<MultipartField>) -> Self {
-        MultipartForm(x)
-    }
-}
-
 pub trait MultipartType
-    where Self: std::marker::Sized
+where
+    Self: std::marker::Sized,
 {
     fn get(form: &MultipartForm, field_name: &str) -> Result<Self, GetError>;
 }
 
 impl<T: FromStr> MultipartType for T {
     fn get(form: &MultipartForm, field_name: &str) -> Result<Self, GetError> {
-        Err(GetError::NotFound)
+        let mut matches = Vec::new();
+        for i in form {
+            match i {
+                MultipartField::File(_) => {},
+                MultipartField::Text(x) => {
+                    if x.name == field_name {
+                        let y: T = x.text.parse().map_err(|e| GetError::TypeError)?;
+                        matches.push(y);
+                    }
+                },
+            }
+        }
+        return match matches.len() {
+            0 => {Err(GetError::NotFound)}
+            1 => {Ok(matches.pop().unwrap())}
+            _ => {Err(GetError::MultipleItems)}
+        }
     }
 }

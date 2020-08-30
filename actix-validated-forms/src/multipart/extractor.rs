@@ -1,12 +1,10 @@
-use super::{MultipartForm, MultipartLoaderConfig, MultipartField, load};
-use validator::Validate;
-use std::{ops, fmt};
+use super::{load, MultipartField, MultipartForm, MultipartLoaderConfig};
+use actix_web::web::Payload;
 use actix_web::{FromRequest, HttpRequest};
 use futures::Future;
-use actix_web::web::Payload;
 use std::convert::TryFrom;
-use std::ptr::null;
-use std::process::exit;
+use std::{fmt, ops};
+use validator::Validate;
 
 pub struct ValidatedMultipartForm<T: Validate>(pub T);
 

@@ -1,12 +1,12 @@
 use crate::error::ValidatedFormError;
-use validator::Validate;
-use std::{ops, fmt};
-use actix_web::{FromRequest, HttpRequest};
-use serde::de::DeserializeOwned;
-use futures::Future;
-use actix_web::dev::{UrlEncoded, Payload};
+use actix_web::dev::{Payload, UrlEncoded};
 use actix_web::error::UrlencodedError;
+use actix_web::{FromRequest, HttpRequest};
+use futures::Future;
+use serde::de::DeserializeOwned;
 use std::rc::Rc;
+use std::{fmt, ops};
+use validator::Validate;
 
 pub struct ValidatedForm<T: Validate>(pub T);
 
@@ -31,17 +31,18 @@ impl<T: Validate> ops::DerefMut for ValidatedForm<T> {
 }
 
 impl<T> FromRequest for ValidatedForm<T>
-    where
-        T: Validate + DeserializeOwned + 'static,
+where
+    T: Validate + DeserializeOwned + 'static,
 {
     type Error = actix_web::Error;
-    type Future = Box<dyn Future<Item=Self, Error=Self::Error>>;
+    type Future = Box<dyn Future<Item = Self, Error = Self::Error>>;
     type Config = ValidatedFormConfig;
 
     #[inline]
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         let req2 = req.clone();
-        let config = req.app_data::<ValidatedFormConfig>()
+        let config = req
+            .app_data::<ValidatedFormConfig>()
             .map(|c| c.clone())
             .unwrap_or(ValidatedFormConfig::default());
 
@@ -50,7 +51,9 @@ impl<T> FromRequest for ValidatedForm<T>
                 .limit(config.limit)
                 .map_err(move |e| ValidatedFormError::Deserialization(e))
                 .and_then(|c: T| {
-                    c.validate().map(|_| c).map_err(|e| ValidatedFormError::Validation(e))
+                    c.validate()
+                        .map(|_| c)
+                        .map_err(|e| ValidatedFormError::Validation(e))
                 })
                 .map_err(move |e| {
                     if let Some(err) = config.error_handler {
@@ -59,7 +62,7 @@ impl<T> FromRequest for ValidatedForm<T>
                         e.into()
                     }
                 })
-                .map(ValidatedForm)
+                .map(ValidatedForm),
         )
     }
 }
@@ -79,7 +82,8 @@ impl<T: Validate + fmt::Display> fmt::Display for ValidatedForm<T> {
 #[derive(Clone)]
 pub struct ValidatedFormConfig {
     limit: usize,
-    error_handler: Option<Rc<dyn Fn(ValidatedFormError<UrlencodedError>, &HttpRequest) -> actix_web::Error>>,
+    error_handler:
+        Option<Rc<dyn Fn(ValidatedFormError<UrlencodedError>, &HttpRequest) -> actix_web::Error>>,
 }
 
 impl ValidatedFormConfig {
@@ -91,8 +95,8 @@ impl ValidatedFormConfig {
 
     /// Set custom error handler
     pub fn error_handler<F>(mut self, f: F) -> Self
-        where
-            F: Fn(ValidatedFormError<UrlencodedError>, &HttpRequest) -> actix_web::Error + 'static,
+    where
+        F: Fn(ValidatedFormError<UrlencodedError>, &HttpRequest) -> actix_web::Error + 'static,
     {
         self.error_handler = Some(Rc::new(f));
         self

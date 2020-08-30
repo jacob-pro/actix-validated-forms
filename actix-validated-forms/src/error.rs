@@ -1,7 +1,7 @@
-use validator::ValidationErrors;
 use actix_web::ResponseError;
 use std::error::Error;
-use std::fmt::{Formatter, Display, Debug, Result};
+use std::fmt::{Debug, Display, Formatter, Result};
+use validator::ValidationErrors;
 
 #[derive(Debug)]
 pub enum ValidatedFormError<T: Debug + Display> {
@@ -16,7 +16,7 @@ impl<T: Debug + Display> Display for ValidatedFormError<T> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
             ValidatedFormError::Validation(e) => Display::fmt(&e, f),
-            ValidatedFormError::Deserialization(e) => Display::fmt(&e, f)
+            ValidatedFormError::Deserialization(e) => Display::fmt(&e, f),
         }
     }
 }

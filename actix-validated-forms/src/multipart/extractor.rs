@@ -5,7 +5,7 @@ use actix_web::{FromRequest, HttpRequest};
 use futures::Future;
 use actix_web::web::Payload;
 use std::convert::TryFrom;
-use crate::multipart::load::load;
+use crate::multipart::load::{load, MultipartField};
 use std::ptr::null;
 use std::process::exit;
 

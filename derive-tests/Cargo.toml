@@ -1,0 +1,12 @@
+[package]
+name = "derive_tests"
+version = "0.1.0"
+authors = ["Jacob Halsey <jacob@jhalsey.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dev-dependencies]
+actix_validated_forms = { path = "../actix-validated-forms" }
+actix_validated_forms_derive = { path = "../actix-validated-forms-derive" }
+tempfile = "~3.1.0"

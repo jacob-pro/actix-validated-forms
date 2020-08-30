@@ -22,14 +22,15 @@ pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
         let name = field.ident.as_ref().unwrap();
         let ty = &field.ty;
         fields_vec_innards.extend(quote!(
-            #name: value.get::<#ty>(stringify!(#name))?,
+            #name: actix_validated_forms::multipart::MultipartType::get(&value, stringify!(#name))
+            .map_err(|e| (stringify!(#name).to_string(), e))?,
         ));
     }
 
     let gen = quote! {
         impl std::convert::TryFrom<actix_validated_forms::multipart::MultipartForm> for #name {
 
-            type Error = actix_validated_forms::multipart::GetError;
+            type Error = (String, actix_validated_forms::multipart::GetError);
 
             fn try_from(value: actix_validated_forms::multipart::MultipartForm) -> Result<Self, Self::Error> {
                 let x = Self {

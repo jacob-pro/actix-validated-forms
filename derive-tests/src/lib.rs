@@ -21,6 +21,7 @@ mod tests {
     struct Two {
         int: i32,
         b: i64,
+        string : String,
     }
 
     #[test]

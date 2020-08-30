@@ -5,6 +5,7 @@ pub use load::*;
 pub use extractor::*;
 
 use tempfile::NamedTempFile;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct MultipartForm(Vec<MultipartField>);
@@ -37,14 +38,19 @@ pub enum GetError {
 }
 
 impl MultipartForm {
-
     pub fn new(x: Vec<MultipartField>) -> Self {
         MultipartForm(x)
     }
+}
 
-    pub fn get<T>(&self, named: &str) -> Result<T, GetError> {
-        println!("getting {}", named);
+pub trait MultipartType
+    where Self: std::marker::Sized
+{
+    fn get(form: &MultipartForm, field_name: &str) -> Result<Self, GetError>;
+}
+
+impl<T: FromStr> MultipartType for T {
+    fn get(form: &MultipartForm, field_name: &str) -> Result<Self, GetError> {
         Err(GetError::NotFound)
     }
-
 }

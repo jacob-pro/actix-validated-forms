@@ -1,11 +1,10 @@
-use super::load::{MultipartForm, MultipartLoaderConfig};
+use super::{MultipartForm, MultipartLoaderConfig, MultipartField, load};
 use validator::Validate;
 use std::{ops, fmt};
 use actix_web::{FromRequest, HttpRequest};
 use futures::Future;
 use actix_web::web::Payload;
 use std::convert::TryFrom;
-use crate::multipart::load::{load, MultipartField};
 use std::ptr::null;
 use std::process::exit;
 

@@ -7,30 +7,12 @@ use std::io::Write;
 use tempfile::NamedTempFile;
 use actix_web::http::header::{DispositionType};
 use actix_web::web::BytesMut;
+use super::{MultipartForm, MultipartFile, MultipartText, MultipartField};
 
 // https://tools.ietf.org/html/rfc7578#section-1
 // `content-type` defaults to text/plain
 // However files must use appropriate MIME or application/octet-stream
 // `filename` should be included but is not a must
-
-pub type MultipartForm = Vec<MultipartField>;
-
-pub struct MultipartFile {
-    file: NamedTempFile,
-    name: String,
-    filename: Option<String>,
-    size: u64,
-}
-
-pub struct MultipartText {
-    name: String,
-    text: String,
-}
-
-pub enum MultipartField {
-    File(MultipartFile),
-    Text(MultipartText),
-}
 
 #[derive(Clone)]
 pub struct MultipartLoaderConfig {
@@ -98,7 +80,7 @@ pub fn load(multipart: Multipart, config: MultipartLoaderConfig) -> impl Future<
             })
         )
 
-    }).map(|k| { k.0 })
+    }).map(|k| { MultipartForm(k.0) })
 }
 
 // https://github.com/actix/examples/blob/master/multipart/src/main.rs

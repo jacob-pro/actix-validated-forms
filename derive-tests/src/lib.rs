@@ -25,7 +25,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let multipart = MultipartForm::new();
+        let multipart = MultipartForm::new(Vec::new());
         let result = Two::try_from(multipart);
         println!("{:?}", result);
     }

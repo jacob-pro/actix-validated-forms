@@ -2,7 +2,8 @@ use crate::error::ValidatedFormError;
 use actix_web::dev::{Payload, UrlEncoded};
 use actix_web::error::UrlencodedError;
 use actix_web::{FromRequest, HttpRequest};
-use futures::Future;
+use futures::future::{self, FutureExt, LocalBoxFuture};
+use futures::TryFutureExt;
 use serde::de::DeserializeOwned;
 use std::rc::Rc;
 use std::{fmt, ops};
@@ -35,7 +36,7 @@ where
     T: Validate + DeserializeOwned + 'static,
 {
     type Error = actix_web::Error;
-    type Future = Box<dyn Future<Item = Self, Error = Self::Error>>;
+    type Future = LocalBoxFuture<'static, Result<Self, Self::Error>>;
     type Config = ValidatedFormConfig;
 
     #[inline]
@@ -46,24 +47,24 @@ where
             .map(|c| c.clone())
             .unwrap_or(ValidatedFormConfig::default());
 
-        Box::new(
-            UrlEncoded::new(req, payload)
-                .limit(config.limit)
-                .map_err(move |e| ValidatedFormError::Deserialization(e))
-                .and_then(|c: T| {
-                    c.validate()
-                        .map(|_| c)
-                        .map_err(|e| ValidatedFormError::Validation(e))
-                })
-                .map_err(move |e| {
+        UrlEncoded::new(req, payload)
+            .limit(config.limit)
+            .map_err(move |e| ValidatedFormError::Deserialization(e))
+            .and_then(|c: T| match c.validate() {
+                Ok(_) => future::ok(c),
+                Err(e) => future::err(ValidatedFormError::Validation(e)),
+            })
+            .map(move |res| match res {
+                Ok(item) => Ok(ValidatedForm(item)),
+                Err(e) => {
                     if let Some(err) = config.error_handler {
-                        (*err)(e, &req2)
+                        Err((*err)(e, &req2))
                     } else {
-                        e.into()
+                        Err(e.into())
                     }
-                })
-                .map(ValidatedForm),
-        )
+                }
+            })
+            .boxed_local()
     }
 }
 
@@ -109,5 +110,70 @@ impl Default for ValidatedFormConfig {
             limit: 16384,
             error_handler: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::http::StatusCode;
+    use actix_web::{test, web, App, HttpResponse, Responder, ResponseError};
+    use serde::{Deserialize, Serialize};
+    use validator::Validate;
+
+    #[derive(Debug, Deserialize, Validate, Serialize)]
+    pub struct ExampleForm {
+        #[validate(length(min = 1, max = 5))]
+        field: String,
+    }
+
+    async fn route(form: ValidatedForm<ExampleForm>) -> impl Responder {
+        HttpResponse::Ok().json(&*form)
+    }
+
+    #[actix_rt::test]
+    async fn test_valid() {
+        let mut app = test::init_service(App::new().route("/", web::get().to(route))).await;
+        let form = ExampleForm {
+            field: "abc".to_string(),
+        };
+        let req = test::TestRequest::with_uri("/")
+            .set_form(&form)
+            .to_request();
+        let resp: ExampleForm = test::read_response_json(&mut app, req).await;
+        assert_eq!(resp.field, "abc");
+    }
+
+    #[derive(Debug)]
+    struct Teapot;
+
+    impl std::fmt::Display for Teapot {
+        fn fmt(&self, _f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+            unimplemented!()
+        }
+    }
+
+    impl ResponseError for Teapot {
+        fn error_response(&self) -> HttpResponse {
+            HttpResponse::build(StatusCode::IM_A_TEAPOT).finish()
+        }
+    }
+
+    #[actix_rt::test]
+    async fn test_invalid() {
+        let mut app = test::init_service(
+            App::new()
+                .app_data(ValidatedFormConfig::default().error_handler(|_, _| Teapot {}.into()))
+                .route("/", web::get().to(route)),
+        )
+        .await;
+        let form = ExampleForm {
+            field: "too long for validation".to_string(),
+        };
+        let req = test::TestRequest::with_uri("/")
+            .set_form(&form)
+            .to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert_eq!(resp.status(), StatusCode::IM_A_TEAPOT);
     }
 }

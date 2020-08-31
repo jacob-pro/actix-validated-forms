@@ -7,11 +7,15 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-futures = "~0.1.27"
-actix-web = "~1.0.5"
-serde_urlencoded = "~0.5.5"
-actix-multipart = "~0.1.2"
-serde = { version = "~1.0.90", features = ["derive"] }
-validator = "~0.8.0"
-tempfile = "~3.1.0"
-mime = "~0.3.13"
+futures = "0.3.1"
+actix-web = "2.0.0"
+actix-multipart = "0.2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_urlencoded = "0.6.1"
+validator = "0.10.1"
+tempfile = "3.1.0"
+mime = "0.3.16"
+
+[dev-dependencies]
+actix-rt = "1.0"
+validator_derive = "0.10.1"

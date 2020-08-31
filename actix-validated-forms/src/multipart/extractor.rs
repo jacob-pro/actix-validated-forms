@@ -12,7 +12,7 @@ use std::ops;
 use std::rc::Rc;
 use validator::Validate;
 
-pub struct ValidatedMultipartForm<T>(pub T);
+pub struct ValidatedMultipartForm<T: Validate>(pub T);
 
 impl<T: Validate> ValidatedMultipartForm<T> {
     pub fn into_inner(self) -> T {

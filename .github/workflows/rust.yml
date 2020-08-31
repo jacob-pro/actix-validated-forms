@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v2
       
     - name: Test main project
-      run: cd actix-validated-forms && cargo test --verbose
+      run: cd actix-validated-forms && cargo test
     - name: Check style
       run: cd actix-validated-forms && cargo fmt -- --check
 
@@ -28,6 +28,6 @@ jobs:
       run: cd actix-validated-forms-derive && cargo fmt -- --check
 
     - name: Run derive-tests
-      run: cd derive-tests && cargo test --verbose
+      run: cd derive-tests && cargo test
     - name: Check style
       run: cd derive-tests && cargo fmt -- --check

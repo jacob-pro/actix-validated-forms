@@ -97,7 +97,12 @@ impl<T: MultipartTypeFromString> MultipartType for Vec<T> {
                 MultipartField::File(_) => {}
                 MultipartField::Text(x) => {
                     if x.name == field_name {
-                        let y: T = x.text.parse().map_err(|_| GetError::TypeError(field_name.into(), std::any::type_name::<T>().into()))?;
+                        let y: T = x.text.parse().map_err(|_| {
+                            GetError::TypeError(
+                                field_name.into(),
+                                std::any::type_name::<T>().into(),
+                            )
+                        })?;
                         matches.push(y);
                     }
                 }

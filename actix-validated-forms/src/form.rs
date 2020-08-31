@@ -31,6 +31,7 @@ impl<T: Validate> ops::DerefMut for ValidatedForm<T> {
     }
 }
 
+// https://docs.rs/actix-web/2.0.0/src/actix_web/types/form.rs.html#112
 impl<T> FromRequest for ValidatedForm<T>
 where
     T: Validate + DeserializeOwned + 'static,
@@ -43,9 +44,9 @@ where
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         let req2 = req.clone();
         let config = req
-            .app_data::<ValidatedFormConfig>()
+            .app_data::<Self::Config>()
             .map(|c| c.clone())
-            .unwrap_or(ValidatedFormConfig::default());
+            .unwrap_or(Self::Config::default());
 
         UrlEncoded::new(req, payload)
             .limit(config.limit)

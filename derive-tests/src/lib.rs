@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use actix_validated_forms::multipart::{MultipartField, MultipartForm, MultipartText};
+    use actix_validated_forms::multipart::{MultipartField, MultipartText, Multiparts};
     use actix_validated_forms_derive::FromMultipart;
     use std::convert::TryFrom;
 
@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut m = MultipartForm::new();
+        let mut m = Multiparts::new();
         m.push(MultipartField::Text(MultipartText {
             name: "string".to_string(),
             text: "Hello World".to_string(),

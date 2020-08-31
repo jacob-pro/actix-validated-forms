@@ -21,17 +21,16 @@ pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
     for field in fields.named.iter() {
         let name = field.ident.as_ref().unwrap();
         fields_vec_innards.extend(quote!(
-            #name: actix_validated_forms::multipart::MultipartType::get(&mut value, stringify!(#name))
-            .map_err(|e| (stringify!(#name).to_string(), e))?,
+            #name: actix_validated_forms::multipart::MultipartType::get(&mut value, stringify!(#name))?,
         ));
     }
 
     let gen = quote! {
-        impl std::convert::TryFrom<actix_validated_forms::multipart::MultipartForm> for #name {
+        impl std::convert::TryFrom<actix_validated_forms::multipart::Multiparts> for #name {
 
-            type Error = (String, actix_validated_forms::multipart::GetError);
+            type Error = actix_validated_forms::multipart::GetError;
 
-            fn try_from(mut value: actix_validated_forms::multipart::MultipartForm) -> Result<Self, Self::Error> {
+            fn try_from(mut value: actix_validated_forms::multipart::Multiparts) -> Result<Self, Self::Error> {
                 let x = Self {
                     #fields_vec_innards
                 };

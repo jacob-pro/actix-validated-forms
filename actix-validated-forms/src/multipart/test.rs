@@ -14,11 +14,10 @@ struct Response {
 }
 
 async fn test_route(payload: Multipart) -> Result<HttpResponse, Error> {
-    let mut k = load(payload, MultipartLoadConfig::default()).await?;
+    let mut k = load_parts(payload, MultipartLoadConfig::default()).await?;
 
     let mut data = String::new();
     let f: MultipartFile = MultipartType::get(&mut k, "file")?;
-    println!("{:?}", f);
     f.file.reopen().unwrap().read_to_string(&mut data).unwrap();
 
     let r = Response {
@@ -56,7 +55,7 @@ async fn test() {
 }
 
 async fn file_size_limit_route(payload: Multipart) -> Result<HttpResponse, Error> {
-    load(payload, MultipartLoadConfig::default().file_limit(2)).await?;
+    load_parts(payload, MultipartLoadConfig::default().file_limit(2)).await?;
     Ok(HttpResponse::Ok().into())
 }
 
@@ -66,7 +65,9 @@ async fn file_size_limit_test() {
 
     let mut form = multipart::Form::default();
     let temp = NamedTempFile::new().unwrap();
-    temp.as_file().write("More than two bytes!!!".as_bytes()).unwrap();
+    temp.as_file()
+        .write("More than two bytes!!!".as_bytes())
+        .unwrap();
     form.add_file("file", temp.path()).unwrap();
 
     let mut response = Client::default()
@@ -77,5 +78,8 @@ async fn file_size_limit_test() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-    assert_eq!("A payload reached size limit.", response.body().await.unwrap());
+    assert_eq!(
+        "A payload reached size limit.",
+        response.body().await.unwrap()
+    );
 }

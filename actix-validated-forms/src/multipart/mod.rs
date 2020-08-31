@@ -1,9 +1,9 @@
-//mod extractor;
+mod extractor;
 mod load;
 #[cfg(test)]
 mod test;
 
-//pub use extractor::*;
+pub use extractor::*;
 pub use load::*;
 
 use actix_web::http::StatusCode;
@@ -12,7 +12,7 @@ use err_derive::Error;
 use std::str::FromStr;
 use tempfile::NamedTempFile;
 
-pub type MultipartForm = Vec<MultipartField>;
+pub type Multiparts = Vec<MultipartField>;
 
 #[derive(Debug)]
 pub struct MultipartFile {
@@ -55,7 +55,7 @@ pub trait MultipartType
 where
     Self: std::marker::Sized,
 {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError>;
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError>;
 }
 
 pub trait MultipartTypeFromString: FromStr {}
@@ -68,7 +68,7 @@ macro_rules! impl_t {
 impl_t!(for i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String);
 
 impl<T: MultipartTypeFromString> MultipartType for T {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError> {
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<T>::get(form, field_name)?;
         match matches.len() {
             0 => Err(GetError::NotFound),
@@ -79,7 +79,7 @@ impl<T: MultipartTypeFromString> MultipartType for T {
 }
 
 impl<T: MultipartTypeFromString> MultipartType for Option<T> {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError> {
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<T>::get(form, field_name)?;
         match matches.len() {
             0 => Ok(None),
@@ -90,7 +90,7 @@ impl<T: MultipartTypeFromString> MultipartType for Option<T> {
 }
 
 impl<T: MultipartTypeFromString> MultipartType for Vec<T> {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError> {
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::new();
         for i in form {
             match i {
@@ -108,7 +108,7 @@ impl<T: MultipartTypeFromString> MultipartType for Vec<T> {
 }
 
 impl MultipartType for MultipartFile {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError> {
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<MultipartFile>::get(form, field_name)?;
         match matches.len() {
             0 => Err(GetError::NotFound),
@@ -119,7 +119,7 @@ impl MultipartType for MultipartFile {
 }
 
 impl MultipartType for Option<MultipartFile> {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError> {
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<MultipartFile>::get(form, field_name)?;
         match matches.len() {
             0 => Ok(None),
@@ -130,7 +130,7 @@ impl MultipartType for Option<MultipartFile> {
 }
 
 impl MultipartType for Vec<MultipartFile> {
-    fn get(form: &mut MultipartForm, field_name: &str) -> Result<Self, GetError> {
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut indexes = Vec::new();
         for (idx, item) in form.iter().enumerate() {
             match item {

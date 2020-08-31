@@ -1,4 +1,4 @@
-use super::{MultipartField, MultipartFile, MultipartForm, MultipartText};
+use super::{MultipartField, MultipartFile, MultipartText, Multiparts};
 use actix_multipart::MultipartError;
 use actix_web::error::{BlockingError, ParseError, PayloadError};
 use actix_web::http::header::DispositionType;
@@ -16,6 +16,7 @@ use tempfile::NamedTempFile;
 pub struct MultipartLoadConfig {
     text_limit: usize,
     file_limit: u64,
+    max_parts: usize,
 }
 
 impl MultipartLoadConfig {
@@ -28,6 +29,11 @@ impl MultipartLoadConfig {
         self.file_limit = limit;
         self
     }
+
+    pub fn max_parts(mut self, max: usize) -> Self {
+        self.max_parts = max;
+        self
+    }
 }
 
 impl Default for MultipartLoadConfig {
@@ -36,19 +42,23 @@ impl Default for MultipartLoadConfig {
         MultipartLoadConfig {
             text_limit: 1 * 1024 * 1024,
             file_limit: 512 * 1024 * 1024,
+            max_parts: 1000,
         }
     }
 }
 
 // https://github.com/actix/examples/blob/master/multipart/src/main.rs
-pub async fn load(
+pub async fn load_parts(
     mut payload: actix_multipart::Multipart,
     config: MultipartLoadConfig,
-) -> Result<MultipartForm, MultipartError> {
-    let mut form = MultipartForm::new();
+) -> Result<Multiparts, MultipartError> {
+    let mut parts = Multiparts::new();
     let mut text_budget = config.text_limit;
     let mut file_budget = config.file_limit;
     while let Ok(Some(field)) = payload.try_next().await {
+        if parts.len() >= config.max_parts {
+            return Err(MultipartError::Payload(PayloadError::Overflow));
+        }
         let cd = match field.content_disposition() {
             Some(cd) => cd,
             None => return Err(MultipartError::Parse(ParseError::Header)),
@@ -72,9 +82,9 @@ pub async fn load(
             file_budget = file_budget - r.size;
             MultipartField::File(r)
         };
-        form.push(item);
+        parts.push(item);
     }
-    Ok(form)
+    Ok(parts)
 }
 
 async fn create_file(

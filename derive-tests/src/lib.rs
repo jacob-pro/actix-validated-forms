@@ -49,7 +49,10 @@ mod tests {
             name: "int_array".to_string(),
             text: "6".to_string(),
         }));
-        let result = Test::try_from(m).unwrap();
+        let result = match Test::try_from(m) {
+            Ok(r) => r,
+            Err(e) => panic!("{}", e),
+        };
 
         assert_eq!(result.string, "Hello World".to_string());
         assert_eq!(result.none_string, None);

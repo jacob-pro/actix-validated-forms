@@ -37,12 +37,12 @@ pub enum MultipartField {
 
 #[derive(Debug, Error)]
 pub enum GetError {
-    #[error(display = "Field not found in form")]
-    NotFound,
-    #[error(display = "Field found but couldn't be converted into the right type")]
-    TypeError,
-    #[error(display = "Duplicated fields found for one name")]
-    DuplicateField,
+    #[error(display = "Field \"{}\" not found", _0)]
+    NotFound(String),
+    #[error(display = "Field \"{}\" couldn't be converted into {}", _0, _1)]
+    TypeError(String, String),
+    #[error(display = "Duplicate values found for field \"{}\"", _0)]
+    DuplicateField(String),
 }
 
 impl ResponseError for GetError {
@@ -71,9 +71,9 @@ impl<T: MultipartTypeFromString> MultipartType for T {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<T>::get(form, field_name)?;
         match matches.len() {
-            0 => Err(GetError::NotFound),
+            0 => Err(GetError::NotFound(field_name.into())),
             1 => Ok(matches.pop().unwrap()),
-            _ => Err(GetError::DuplicateField),
+            _ => Err(GetError::DuplicateField(field_name.into())),
         }
     }
 }
@@ -84,7 +84,7 @@ impl<T: MultipartTypeFromString> MultipartType for Option<T> {
         match matches.len() {
             0 => Ok(None),
             1 => Ok(Some(matches.pop().unwrap())),
-            _ => Err(GetError::DuplicateField),
+            _ => Err(GetError::DuplicateField(field_name.into())),
         }
     }
 }
@@ -97,7 +97,7 @@ impl<T: MultipartTypeFromString> MultipartType for Vec<T> {
                 MultipartField::File(_) => {}
                 MultipartField::Text(x) => {
                     if x.name == field_name {
-                        let y: T = x.text.parse().map_err(|_| GetError::TypeError)?;
+                        let y: T = x.text.parse().map_err(|_| GetError::TypeError(field_name.into(), std::any::type_name::<T>().into()))?;
                         matches.push(y);
                     }
                 }
@@ -111,9 +111,9 @@ impl MultipartType for MultipartFile {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<MultipartFile>::get(form, field_name)?;
         match matches.len() {
-            0 => Err(GetError::NotFound),
+            0 => Err(GetError::NotFound(field_name.into())),
             1 => Ok(matches.pop().unwrap()),
-            _ => Err(GetError::DuplicateField),
+            _ => Err(GetError::DuplicateField(field_name.into())),
         }
     }
 }
@@ -124,7 +124,7 @@ impl MultipartType for Option<MultipartFile> {
         match matches.len() {
             0 => Ok(None),
             1 => Ok(Some(matches.pop().unwrap())),
-            _ => Err(GetError::DuplicateField),
+            _ => Err(GetError::DuplicateField(field_name.into())),
         }
     }
 }

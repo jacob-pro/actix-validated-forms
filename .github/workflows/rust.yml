@@ -19,6 +19,8 @@ jobs:
       
     - name: Enter actix-validated-forms 
       run: cd ./actix-validated-forms 
+    - name: Run ls
+      run: ls -la
     - name: Run tests
       run: cargo test --verbose
     - name: Check style

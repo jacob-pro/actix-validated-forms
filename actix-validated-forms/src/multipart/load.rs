@@ -82,7 +82,7 @@ async fn create_file(
     name: String,
     filename: Option<String>,
     max_size: u64,
-    reported_mime: mime::Mime
+    reported_mime: mime::Mime,
 ) -> Result<MultipartFile, MultipartError> {
     let mut written = 0;
     let mut budget = max_size;

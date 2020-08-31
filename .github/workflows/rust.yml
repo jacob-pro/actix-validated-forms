@@ -19,15 +19,14 @@ jobs:
       
     - name: Test main project
       run: cd actix-validated-forms && cargo test
-    - name: Check style
-      run: cd actix-validated-forms && cargo fmt -- --check
-
     - name: Build derive crate
       run: cd actix-validated-forms-derive && cargo build
-    - name: Check style
-      run: cd actix-validated-forms-derive && cargo fmt -- --check
-
     - name: Run derive-tests
       run: cd derive-tests && cargo test
-    - name: Check style
+
+    - name: Check actix-validated-forms style
+      run: cd actix-validated-forms && cargo fmt -- --check
+    - name: Check actix-validated-forms-derive style
+      run: cd actix-validated-forms-derive && cargo fmt -- --check
+    - name: Check derive-tests style
       run: cd derive-tests && cargo fmt -- --check

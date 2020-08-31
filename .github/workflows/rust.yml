@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v2
       
     - name: Enter actix-validated-forms 
-      run: cd ./tix-validated-forms 
+      run: cd ./actix-validated-forms 
     - name: Run tests
       run: cargo test --verbose
     - name: Check style

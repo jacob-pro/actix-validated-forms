@@ -17,25 +17,17 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       
-    - name: Enter actix-validated-forms 
-      run: cd ./actix-validated-forms 
-    - name: Run ls
-      run: ls -la
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Test main project
+      run: cd actix-validated-forms && cargo test --verbose
     - name: Check style
-      run: cargo fmt -- --check
-      
-    - name: Enter actix-validated-forms-derive
-      run: cd ../actix-validated-forms-derive  
-    - name: Run tests
-      run: cargo build
-    - name: Check style
-      run: cargo fmt -- --check
+      run: cd actix-validated-forms && cargo fmt -- --check
 
-    - name: Enter derive-tests
-      run: cd ../derive-tests  
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Build derive crate
+      run: cd actix-validated-forms-derive && cargo build
     - name: Check style
-      run: cargo fmt -- --check
+      run: cd actix-validated-forms-derive && cargo fmt -- --check
+
+    - name: Run derive-tests
+      run: cd derive-tests && cargo test --verbose
+    - name: Check style
+      run: cd derive-tests && cargo fmt -- --check

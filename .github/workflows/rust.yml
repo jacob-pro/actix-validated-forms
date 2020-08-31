@@ -1,0 +1,32 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Test main project
+      run: cd actix-validated-forms && cargo test
+    - name: Build derive crate
+      run: cd actix-validated-forms-derive && cargo build
+    - name: Run derive-tests
+      run: cd derive-tests && cargo test
+
+    - name: Check actix-validated-forms style
+      run: cd actix-validated-forms && cargo fmt -- --check
+    - name: Check actix-validated-forms-derive style
+      run: cd actix-validated-forms-derive && cargo fmt -- --check
+    - name: Check derive-tests style
+      run: cd derive-tests && cargo fmt -- --check

@@ -61,13 +61,14 @@ pub async fn load(
             Some(name) => name.to_owned(),
             None => return Err(MultipartError::Parse(ParseError::Header)),
         };
-        let item = if field.content_type() == &mime::TEXT_PLAIN {
+        let content_type = field.content_type().clone();
+        let item = if content_type == mime::TEXT_PLAIN {
             let (r, size) = create_text(field, name, text_budget).await?;
             text_budget = text_budget - size;
             MultipartField::Text(r)
         } else {
             let filename = cd.get_filename().map(|f| f.to_owned());
-            let r = create_file(field, name, filename, file_budget).await?;
+            let r = create_file(field, name, filename, file_budget, content_type).await?;
             file_budget = file_budget - r.size;
             MultipartField::File(r)
         };
@@ -81,6 +82,7 @@ async fn create_file(
     name: String,
     filename: Option<String>,
     max_size: u64,
+    reported_mime: mime::Mime
 ) -> Result<MultipartFile, MultipartError> {
     let mut written = 0;
     let mut budget = max_size;
@@ -115,6 +117,7 @@ async fn create_file(
         name,
         filename,
         size: written,
+        reported_mime,
     })
 }
 

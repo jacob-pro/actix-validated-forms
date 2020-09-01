@@ -1,5 +1,6 @@
+#[cfg(test)]
 #[macro_use]
-pub extern crate validator_derive;
+extern crate validator_derive;
 
 pub mod error;
 pub mod form;

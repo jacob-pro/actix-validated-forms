@@ -1,4 +1,3 @@
-#[cfg(test)]
 #[macro_use]
 pub extern crate validator_derive;
 

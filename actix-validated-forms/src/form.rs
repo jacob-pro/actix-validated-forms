@@ -55,14 +55,12 @@ where
                 Ok(_) => future::ok(c),
                 Err(e) => future::err(ValidatedFormError::Validation(e)),
             })
-            .map(move |res| match res {
-                Ok(item) => Ok(ValidatedForm(item)),
-                Err(e) => {
-                    if let Some(err) = config.error_handler {
-                        Err((*err)(e, &req2))
-                    } else {
-                        Err(e.into())
-                    }
+            .map_ok(ValidatedForm)
+            .map_err(move |e| {
+                if let Some(err) = config.error_handler {
+                    (*err)(e, &req2)
+                } else {
+                    e.into()
                 }
             })
             .boxed_local()

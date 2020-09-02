@@ -7,5 +7,5 @@ pub mod form;
 pub mod multipart;
 pub mod query;
 
-pub use validator;
 pub use tempfile;
+pub use validator;

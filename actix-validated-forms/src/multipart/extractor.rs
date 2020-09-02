@@ -5,7 +5,7 @@ use actix_multipart::{Multipart, MultipartError};
 use actix_web::dev::Payload;
 use actix_web::{FromRequest, HttpRequest};
 use futures::future::LocalBoxFuture;
-use futures::FutureExt;
+use futures::{FutureExt, TryFutureExt};
 use std::convert::TryFrom;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops;
@@ -71,14 +71,12 @@ where
                     MultipartErrorWrapper::Multipart(e),
                 )),
             })
-            .map(move |e| match e {
-                Ok(item) => Ok(ValidatedMultipartForm(item)),
-                Err(e) => {
-                    if let Some(err) = config.error_handler {
-                        Err((*err)(e, &req2))
-                    } else {
-                        Err(Self::Error::from(e))
-                    }
+            .map_ok(ValidatedMultipartForm)
+            .map_err(move |e| {
+                if let Some(err) = config.error_handler {
+                    (*err)(e, &req2)
+                } else {
+                    Self::Error::from(e)
                 }
             })
             .boxed_local()

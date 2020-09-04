@@ -81,7 +81,7 @@ pub async fn load_parts(
             field.content_type().clone()
         };
 
-        let item = if content_type == mime::TEXT_PLAIN {
+        let item = if content_type == mime::TEXT_PLAIN && cd.get_filename().is_none() {
             let (r, size) = create_text(field, name, text_budget).await?;
             text_budget = text_budget - size;
             MultipartField::Text(r)

@@ -9,6 +9,8 @@ pub use load::*;
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
 use err_derive::Error;
+use std::ffi::OsStr;
+use std::path::Path;
 use std::str::FromStr;
 use tempfile::NamedTempFile;
 
@@ -17,10 +19,18 @@ pub type Multiparts = Vec<MultipartField>;
 #[derive(Debug)]
 pub struct MultipartFile {
     pub file: NamedTempFile,
+    pub size: u64,
     pub name: String,
     pub filename: Option<String>,
-    pub size: u64,
-    pub reported_mime: mime::Mime,
+    pub mime: mime::Mime,
+}
+
+impl MultipartFile {
+    pub fn get_extension(&self) -> Option<&str> {
+        self.filename
+            .as_ref()
+            .and_then(|f| Path::new(f.as_str()).extension().and_then(OsStr::to_str))
+    }
 }
 
 #[derive(Debug)]

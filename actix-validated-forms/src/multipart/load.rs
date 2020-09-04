@@ -124,10 +124,10 @@ async fn create_file(
     }
     Ok(MultipartFile {
         file: ntf,
+        size: written,
         name,
         filename,
-        size: written,
-        reported_mime,
+        mime: reported_mime,
     })
 }
 

@@ -1,6 +1,7 @@
 use super::{MultipartField, MultipartFile, MultipartText, Multiparts};
 use actix_multipart::MultipartError;
 use actix_web::error::{BlockingError, ParseError, PayloadError};
+use actix_web::http::header;
 use actix_web::http::header::DispositionType;
 use actix_web::web::{self, BytesMut};
 use futures::{StreamExt, TryFutureExt, TryStreamExt};
@@ -9,8 +10,8 @@ use tempfile::NamedTempFile;
 
 // https://tools.ietf.org/html/rfc7578#section-1
 // `content-type` defaults to text/plain
-// However files must use appropriate MIME or application/octet-stream
-// `filename` should be included but is not a must
+// files SHOULD use appropriate mime or application/octet-stream
+// `filename` SHOULD be included but is not a MUST
 
 #[derive(Clone)]
 pub struct MultipartLoadConfig {
@@ -55,6 +56,7 @@ pub async fn load_parts(
     let mut parts = Multiparts::new();
     let mut text_budget = config.text_limit;
     let mut file_budget = config.file_limit;
+
     while let Ok(Some(field)) = payload.try_next().await {
         if parts.len() >= config.max_parts {
             return Err(MultipartError::Payload(PayloadError::Overflow));
@@ -71,7 +73,14 @@ pub async fn load_parts(
             Some(name) => name.to_owned(),
             None => return Err(MultipartError::Parse(ParseError::Header)),
         };
-        let content_type = field.content_type().clone();
+
+        // We need to default to TEXT_PLAIN however actix content_type() defaults to APPLICATION_OCTET_STREAM
+        let content_type = if field.headers().get(&header::CONTENT_TYPE).is_none() {
+            mime::TEXT_PLAIN
+        } else {
+            field.content_type().clone()
+        };
+
         let item = if content_type == mime::TEXT_PLAIN {
             let (r, size) = create_text(field, name, text_budget).await?;
             text_budget = text_budget - size;
@@ -92,7 +101,7 @@ async fn create_file(
     name: String,
     filename: Option<String>,
     max_size: u64,
-    reported_mime: mime::Mime,
+    mime: mime::Mime,
 ) -> Result<MultipartFile, MultipartError> {
     let mut written = 0;
     let mut budget = max_size;
@@ -127,7 +136,7 @@ async fn create_file(
         size: written,
         name,
         filename,
-        mime: reported_mime,
+        mime,
     })
 }
 

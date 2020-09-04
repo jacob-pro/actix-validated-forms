@@ -47,11 +47,11 @@ pub enum MultipartField {
 
 #[derive(Debug, Error)]
 pub enum GetError {
-    #[error(display = "Field \"{}\" not found", _0)]
+    #[error(display = "Field '{}' not found", _0)]
     NotFound(String),
-    #[error(display = "Field \"{}\" couldn't be converted into {}", _0, _1)]
+    #[error(display = "Field '{}' couldn't be converted into {}", _0, _1)]
     TypeError(String, String),
-    #[error(display = "Duplicate values found for field \"{}\"", _0)]
+    #[error(display = "Duplicate values found for field '{}'", _0)]
     DuplicateField(String),
 }
 

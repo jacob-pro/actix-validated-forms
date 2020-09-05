@@ -152,7 +152,6 @@ async fn create_text(
     while let Some(chunk) = field.next().await {
         let bytes = chunk?;
         let length = bytes.len();
-        println!("{} {} {}", written, length, budget);
         if budget < length {
             return Err(MultipartError::Payload(PayloadError::Overflow));
         }

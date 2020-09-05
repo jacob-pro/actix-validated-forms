@@ -152,6 +152,7 @@ async fn create_text(
     while let Some(chunk) = field.next().await {
         let bytes = chunk?;
         let length = bytes.len();
+        println!("{} {} {}", written, length, budget);
         if budget < length {
             return Err(MultipartError::Payload(PayloadError::Overflow));
         }
@@ -162,5 +163,5 @@ async fn create_text(
     //TODO: Currently only supports UTF-8, consider looking at the charset header and _charset_ field
     let text = String::from_utf8(acc.to_vec())
         .map_err(|a| MultipartError::Parse(ParseError::Utf8(a.utf8_error())))?;
-    Ok((MultipartText { name, text }, budget))
+    Ok((MultipartText { name, text }, written))
 }

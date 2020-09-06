@@ -16,9 +16,13 @@ validator = "0.10.1"
 tempfile = "3.1.0"
 mime = "0.3.16"
 err-derive = "0.2.4"
+actix_validated_forms_derive = { optional = true, path = "../actix-validated-forms-derive" }
 
 [dev-dependencies]
 actix-rt = "1.0"
 awc = "1.0"
 actix-multipart-rfc7578 = "0.3.0-rc"
 validator_derive = "0.10.1"
+
+[features]
+derive = ["actix_validated_forms_derive"]

@@ -68,16 +68,14 @@ where
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError>;
 }
 
-pub trait MultipartTypeFromString: FromStr {}
-
-macro_rules! impl_t {
-    (for $($t:ty),+) => {
-        $(impl MultipartTypeFromString for $t { })*
-    }
+pub trait MultipartTypeSpecial
+where
+    Self: std::marker::Sized,
+{
+    fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError>;
 }
-impl_t!(for i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String);
 
-impl<T: MultipartTypeFromString> MultipartType for T {
+impl<T: FromStr> MultipartType for T {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<T>::get(form, field_name)?;
         match matches.len() {
@@ -88,7 +86,7 @@ impl<T: MultipartTypeFromString> MultipartType for T {
     }
 }
 
-impl<T: MultipartTypeFromString> MultipartType for Option<T> {
+impl<T: FromStr> MultipartTypeSpecial for Option<T> {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<T>::get(form, field_name)?;
         match matches.len() {
@@ -99,7 +97,7 @@ impl<T: MultipartTypeFromString> MultipartType for Option<T> {
     }
 }
 
-impl<T: MultipartTypeFromString> MultipartType for Vec<T> {
+impl<T: FromStr> MultipartTypeSpecial for Vec<T> {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::new();
         for i in form {
@@ -133,7 +131,7 @@ impl MultipartType for MultipartFile {
     }
 }
 
-impl MultipartType for Option<MultipartFile> {
+impl MultipartTypeSpecial for Option<MultipartFile> {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut matches = Vec::<MultipartFile>::get(form, field_name)?;
         match matches.len() {
@@ -144,7 +142,7 @@ impl MultipartType for Option<MultipartFile> {
     }
 }
 
-impl MultipartType for Vec<MultipartFile> {
+impl MultipartTypeSpecial for Vec<MultipartFile> {
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError> {
         let mut indexes = Vec::new();
         for (idx, item) in form.iter().enumerate() {

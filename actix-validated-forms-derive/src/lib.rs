@@ -2,6 +2,7 @@ extern crate proc_macro;
 
 use crate::proc_macro::TokenStream;
 use quote::quote;
+use syn::{PathArguments, Type};
 
 #[proc_macro_derive(FromMultipart)]
 pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
@@ -20,8 +21,16 @@ pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
     let mut fields_vec_innards = quote!();
     for field in fields.named.iter() {
         let name = field.ident.as_ref().unwrap();
+        let ty = &field.ty;
+        let p = match ty {
+            Type::Path(ref p) => p,
+            _ => panic!("Field must be a TypePath"),
+        };
+        let mut x = p.clone();
+        let last = &mut x.path.segments.last_mut().unwrap();
+        last.value_mut().arguments = PathArguments::None;
         fields_vec_innards.extend(quote!(
-            #name: actix_validated_forms::multipart::MultipartType::get(&mut value, stringify!(#name))?,
+            #name: #x::get(&mut value, stringify!(#name))?,
         ));
     }
 
@@ -31,6 +40,8 @@ pub fn impl_from_multipart(input: TokenStream) -> TokenStream {
             type Error = actix_validated_forms::multipart::GetError;
 
             fn try_from(mut value: actix_validated_forms::multipart::Multiparts) -> Result<Self, Self::Error> {
+                use actix_validated_forms::multipart::MultipartType;
+                use actix_validated_forms::multipart::MultipartTypeSpecial;
                 let x = Self {
                     #fields_vec_innards
                 };

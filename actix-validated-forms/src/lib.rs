@@ -10,7 +10,6 @@ pub mod query;
 pub use tempfile;
 pub use validator;
 
-
 // Re-export derive
 #[cfg(feature = "derive")]
 #[allow(unused_imports)]

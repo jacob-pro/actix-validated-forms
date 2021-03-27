@@ -13,6 +13,7 @@ use tempfile::NamedTempFile;
 // files SHOULD use appropriate mime or application/octet-stream
 // `filename` SHOULD be included but is not a MUST
 
+/// Configuration options when loading a multipart form
 #[derive(Clone)]
 pub struct MultipartLoadConfig {
     text_limit: usize,
@@ -21,16 +22,19 @@ pub struct MultipartLoadConfig {
 }
 
 impl MultipartLoadConfig {
+    /// Maximum total bytes of text (will be loaded into memory) - default 1 MiB
     pub fn text_limit(mut self, limit: usize) -> Self {
         self.text_limit = limit;
         self
     }
 
+    /// Maximum total bytes of file upload (will be written to temporary file) - default 512 MiB
     pub fn file_limit(mut self, limit: u64) -> Self {
         self.file_limit = limit;
         self
     }
 
+    /// Maximum parts the form may contain - default 1000
     pub fn max_parts(mut self, max: usize) -> Self {
         self.max_parts = max;
         self
@@ -48,7 +52,18 @@ impl Default for MultipartLoadConfig {
     }
 }
 
-// https://github.com/actix/examples/blob/master/multipart/src/main.rs
+/// Use to load a multipart form from an Actix Multipart request
+///
+/// This is an asynchronous operation, blocking IO such as writing an uploaded file
+/// to disk will be done on a background thread pool (using `actix_web::web::block`)
+///
+/// # Example
+/// ```
+/// async fn route(payload: actix_multipart::Multipart) -> impl Responder {
+///     let mut form = load_parts(payload, MultipartLoadConfig::default()).await?;
+///     ...
+/// }
+/// ```
 pub async fn load_parts(
     mut payload: actix_multipart::Multipart,
     config: MultipartLoadConfig,

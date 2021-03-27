@@ -19,8 +19,9 @@ use tempfile::NamedTempFile;
 /// Use with the `MultipartType` (and `MultipartTypeSpecial`) traits for easily accessing a given
 /// field/part by name
 /// # Example
-/// ```
-/// let parts: Multiparts = load_parts(payload, MultipartLoadConfig::default()).await?;
+/// ```compile_fail
+/// # use actix_validated_forms::multipart::{Multiparts, load_parts, MultipartLoadConfig, MultipartType};
+/// let mut parts: Multiparts = load_parts(payload, MultipartLoadConfig::default()).await?;
 /// let int_val: i64 = MultipartType::get(&mut parts, "field_name")?;
 /// let str_val: String = MultipartType::get(&mut parts, "field_name")?;
 /// ```
@@ -100,9 +101,14 @@ where
     ///
     /// Implementations are provided for any type that implements `FromStr`
     /// # Example
-    /// ```
+    /// ```no_run
+    /// # use actix_validated_forms::multipart::MultipartType;
+    /// # use actix_validated_forms::multipart::GetError;
+    /// # fn main() -> Result<(), GetError> {
+    /// let mut form = Vec::new();
     /// let int_val: i64 = MultipartType::get(&mut form, "field_name")?;
     /// let str_val: String = MultipartType::get(&mut form, "field_name")?;
+    /// # Ok(()) }
     /// ```
     fn get(form: &mut Multiparts, field_name: &str) -> Result<Self, GetError>;
 }

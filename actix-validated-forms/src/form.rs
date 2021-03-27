@@ -13,19 +13,24 @@ use validator::Validate;
 ///
 /// # Example
 /// First define a structure to represent the form that implements `serde::Deserialize` and
-/// `validator::Validate` traits.
+/// `validator::Validate` traits. Then use the extractor in your route
+///
 /// ```
+/// #[macro_use] extern crate validator_derive; fn main() {
+/// # use serde::Deserialize;
+/// # use validator::Validate;
 /// #[derive(Deserialize, Validate)]
 /// struct ExampleForm {
 ///     #[validate(length(min = 1, max = 5))]
 ///     field: String,
 /// }
-/// ```
-/// Use the extractor in your route:
-/// ```
+/// # use actix_web::{HttpResponse};
+/// # use actix_validated_forms::form::ValidatedForm;
 /// async fn route(
 ///     form: ValidatedForm<ExampleForm>,
-/// ) -> impl Responder { ... }
+/// ) -> HttpResponse {
+///     # unimplemented!(); }
+/// # }
 /// ```
 /// Just like the `actix_web::web::Form` when the body of route is executed `form` can be
 /// dereferenced to an `ExampleForm`, however it has the additional guarantee to have been
@@ -105,9 +110,30 @@ impl<T: Validate + fmt::Display> fmt::Display for ValidatedForm<T> {
 /// # Usage
 /// Add a `ValidatedFormConfig` to your actix app data
 /// ```
-/// .app_data(
+/// # use actix_validated_forms::form::ValidatedFormConfig;
+/// # use actix_web::web::scope;
+/// # use actix_web::{ResponseError, HttpResponse};
+/// # #[derive(Debug)]
+/// # struct YourCustomErrorType;
+/// # impl<T> From<actix_validated_forms::error::ValidatedFormError<T>> for YourCustomErrorType
+/// # where T: std::fmt::Debug + std::fmt::Display {
+/// #     fn from(_: actix_validated_forms::error::ValidatedFormError<T>) -> Self {
+/// #         YourCustomErrorType{}
+/// #     }
+/// # }
+/// # impl std::fmt::Display for YourCustomErrorType {
+/// #     fn fmt(&self, _f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+/// #         unimplemented!()
+/// #     }
+/// # }
+/// # impl ResponseError for YourCustomErrorType {
+/// #     fn error_response(&self) -> HttpResponse {
+/// #         unimplemented!()
+/// #     }
+/// # }
+/// scope("/").app_data(
 ///     ValidatedFormConfig::default().error_handler(|e, _| YourCustomErrorType::from(e).into())
-/// )
+/// );
 /// ```
 #[derive(Clone)]
 pub struct ValidatedFormConfig {

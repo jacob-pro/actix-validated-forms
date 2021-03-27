@@ -59,10 +59,11 @@ impl Default for MultipartLoadConfig {
 ///
 /// # Example
 /// ```
-/// async fn route(payload: actix_multipart::Multipart) -> impl Responder {
+/// # use actix_validated_forms::multipart::{load_parts, MultipartLoadConfig};
+/// # use actix_web::{HttpResponse, Error};
+/// async fn route(payload: actix_multipart::Multipart) -> Result<HttpResponse, Error> {
 ///     let mut form = load_parts(payload, MultipartLoadConfig::default()).await?;
-///     ...
-/// }
+///     # unimplemented!() }
 /// ```
 pub async fn load_parts(
     mut payload: actix_multipart::Multipart,

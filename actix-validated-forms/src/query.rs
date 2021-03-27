@@ -12,8 +12,12 @@ use validator::Validate;
 ///
 /// # Example
 /// First define a structure to represent the query that implements `serde::Deserialize` and
-/// `validator::Validate` traits.
+/// `validator::Validate` traits. Then use the extractor in your route
+///
 /// ```
+/// #[macro_use] extern crate validator_derive; fn main() {
+/// # use serde::Deserialize;
+/// # use validator::Validate;
 /// #[derive(Deserialize, Validate)]
 /// struct ExampleQuery {
 ///     #[validate(range(min = 1, max = 100))]
@@ -21,12 +25,13 @@ use validator::Validate;
 ///     offset: i64,
 ///     search: Option<String>,
 /// }
-/// ```
-/// Use the extractor in your route:
-/// ```
+/// # use actix_web::{HttpResponse};
+/// # use actix_validated_forms::query::ValidatedQuery;
 /// async fn route(
-///     query: ValidatedQuery<ExampleQuery>,
-/// ) -> impl Responder { ... }
+///     form: ValidatedQuery<ExampleQuery>,
+/// ) -> HttpResponse {
+///     # unimplemented!(); }
+/// # }
 /// ```
 /// Just like the `actix_web::web::Query` when the body of route is executed `query` can be
 /// dereferenced to an `ExampleQuery`, however it has the additional guarantee to have been
@@ -106,9 +111,30 @@ impl<T: Validate + fmt::Display> fmt::Display for ValidatedQuery<T> {
 /// # Usage
 /// Add a `ValidatedQueryConfig` to your actix app data
 /// ```
-/// .app_data(
+/// # use actix_web::web::scope;
+/// # use actix_web::{ResponseError, HttpResponse};
+/// # use actix_validated_forms::query::ValidatedQueryConfig;
+/// # #[derive(Debug)]
+/// # struct YourCustomErrorType;
+/// # impl<T> From<actix_validated_forms::error::ValidatedFormError<T>> for YourCustomErrorType
+/// # where T: std::fmt::Debug + std::fmt::Display {
+/// #     fn from(_: actix_validated_forms::error::ValidatedFormError<T>) -> Self {
+/// #         YourCustomErrorType{}
+/// #     }
+/// # }
+/// # impl std::fmt::Display for YourCustomErrorType {
+/// #     fn fmt(&self, _f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+/// #         unimplemented!()
+/// #     }
+/// # }
+/// # impl ResponseError for YourCustomErrorType {
+/// #     fn error_response(&self) -> HttpResponse {
+/// #         unimplemented!()
+/// #     }
+/// # }
+/// scope("/").app_data(
 ///     ValidatedQueryConfig::default().error_handler(|e, _| YourCustomErrorType::from(e).into())
-/// )
+/// );
 /// ```
 #[derive(Clone)]
 pub struct ValidatedQueryConfig {

@@ -8,6 +8,29 @@ use std::sync::Arc;
 use std::{fmt, ops};
 use validator::Validate;
 
+/// Validated extractor for a Url Encoded HTTP Query String
+///
+/// # Example
+/// First define a structure to represent the query that implements `serde::Deserialize` and
+/// `validator::Validate` traits.
+/// ```
+/// #[derive(Deserialize, Validate)]
+/// struct ExampleQuery {
+///     #[validate(range(min = 1, max = 100))]
+///     limit: i64,
+///     offset: i64,
+///     search: Option<String>,
+/// }
+/// ```
+/// Use the extractor in your route:
+/// ```
+/// async fn route(
+///     query: ValidatedQuery<ExampleQuery>,
+/// ) -> impl Responder { ... }
+/// ```
+/// Just like the `actix_web::web::Query` when the body of route is executed `query` can be
+/// dereferenced to an `ExampleQuery`, however it has the additional guarantee to have been
+/// successfully validated.
 pub struct ValidatedQuery<T: Validate>(pub T);
 
 impl<T: Validate> ValidatedQuery<T> {
@@ -78,6 +101,15 @@ impl<T: Validate + fmt::Display> fmt::Display for ValidatedQuery<T> {
     }
 }
 
+/// Configure the behaviour of the ValidatedQuery extractor
+///
+/// # Usage
+/// Add a `ValidatedQueryConfig` to your actix app data
+/// ```
+/// .app_data(
+///     ValidatedQueryConfig::default().error_handler(|e, _| YourCustomErrorType::from(e).into())
+/// )
+/// ```
 #[derive(Clone)]
 pub struct ValidatedQueryConfig {
     error_handler: Option<
@@ -90,7 +122,8 @@ pub struct ValidatedQueryConfig {
 }
 
 impl ValidatedQueryConfig {
-    /// Set custom error handler
+    /// Sets a custom error handler to convert the error (arising from a query that failed to
+    /// either deserialize or validate) into a different type
     pub fn error_handler<F>(mut self, f: F) -> Self
     where
         F: Fn(ValidatedFormError<QueryPayloadError>, &HttpRequest) -> actix_web::Error

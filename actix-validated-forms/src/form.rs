@@ -9,6 +9,27 @@ use std::rc::Rc;
 use std::{fmt, ops};
 use validator::Validate;
 
+/// Validated extractor for an application/x-www-form-urlencoded HTTP request body
+///
+/// # Example
+/// First define a structure to represent the form that implements `serde::Deserialize` and
+/// `validator::Validate` traits.
+/// ```
+/// #[derive(Deserialize, Validate)]
+/// struct ExampleForm {
+///     #[validate(length(min = 1, max = 5))]
+///     field: String,
+/// }
+/// ```
+/// Use the extractor in your route:
+/// ```
+/// async fn route(
+///     form: ValidatedForm<ExampleForm>,
+/// ) -> impl Responder { ... }
+/// ```
+/// Just like the `actix_web::web::Form` when the body of route is executed `form` can be
+/// dereferenced to an `ExampleForm`, however it has the additional guarantee to have been
+/// successfully validated.
 pub struct ValidatedForm<T: Validate>(pub T);
 
 impl<T: Validate> ValidatedForm<T> {
@@ -79,6 +100,15 @@ impl<T: Validate + fmt::Display> fmt::Display for ValidatedForm<T> {
     }
 }
 
+/// Configure the behaviour of the ValidatedForm extractor
+///
+/// # Usage
+/// Add a `ValidatedFormConfig` to your actix app data
+/// ```
+/// .app_data(
+///     ValidatedFormConfig::default().error_handler(|e, _| YourCustomErrorType::from(e).into())
+/// )
+/// ```
 #[derive(Clone)]
 pub struct ValidatedFormConfig {
     limit: usize,
@@ -87,13 +117,14 @@ pub struct ValidatedFormConfig {
 }
 
 impl ValidatedFormConfig {
-    /// Change max size of payload. By default max size is 16Kb
+    /// Set the max size of payload. By default max size is 16Kb
     pub fn limit(mut self, limit: usize) -> Self {
         self.limit = limit;
         self
     }
 
-    /// Set custom error handler
+    /// Sets a custom error handler to convert the error (arising from a form that failed to
+    /// either deserialize or validate) into a different type
     pub fn error_handler<F>(mut self, f: F) -> Self
     where
         F: Fn(ValidatedFormError<UrlencodedError>, &HttpRequest) -> actix_web::Error + 'static,

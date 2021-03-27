@@ -12,6 +12,33 @@ use std::ops;
 use std::rc::Rc;
 use validator::Validate;
 
+/// Validated extractor for a HTTP Multipart request
+///
+/// # Example
+/// First define a structure to represent the form that implements `FromMultipart` and
+/// `validator::Validate` traits. Then use the extractor in your route
+///
+/// ```
+/// # #[macro_use] extern crate validator_derive;
+/// # fn main() {
+/// # use actix_validated_forms_derive::FromMultipart;
+/// # use validator::Validate;
+/// #[derive(FromMultipart, Validate)]
+/// struct MultipartUpload {
+///    #[validate(length(max = 4096))]
+///    description: String,
+///    image: MultipartFile,
+/// }
+/// # use actix_web::{HttpResponse};
+/// # use actix_validated_forms::multipart::{MultipartFile, ValidatedMultipartForm};
+///
+/// async fn route(
+///     form: ValidatedMultipartForm<MultipartUpload>,
+/// ) -> HttpResponse {
+///     let img_bytes = std::fs::read(form.image.file.path()).unwrap();
+///     # unimplemented!(); }
+/// # }
+/// ```
 pub struct ValidatedMultipartForm<T: Validate>(pub T);
 
 impl<T: Validate> ValidatedMultipartForm<T> {
@@ -83,6 +110,19 @@ where
     }
 }
 
+/// Configure the behaviour of the ValidatedMultipartForm extractor
+///
+/// # Usage
+/// Add a `ValidatedFormConfig` to your actix app data
+/// ```
+/// # use actix_web::web::scope;
+/// use actix_validated_forms::multipart::{ValidatedMultipartFormConfig, MultipartLoadConfig};
+/// scope("/").app_data(
+///     ValidatedMultipartFormConfig::default().config(
+///         MultipartLoadConfig::default().file_limit(25 * 1024 * 1024) // 25 MiB
+///     )
+/// );
+/// ```
 #[derive(Clone)]
 pub struct ValidatedMultipartFormConfig {
     config: MultipartLoadConfig,

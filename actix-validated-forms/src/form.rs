@@ -16,7 +16,7 @@ use validator::Validate;
 /// `validator::Validate` traits. Then use the extractor in your route
 ///
 /// ```
-/// #[macro_use] extern crate validator_derive; fn main() {
+/// # #[macro_use] extern crate validator_derive; fn main() {
 /// # use serde::Deserialize;
 /// # use validator::Validate;
 /// #[derive(Deserialize, Validate)]
@@ -26,6 +26,7 @@ use validator::Validate;
 /// }
 /// # use actix_web::{HttpResponse};
 /// # use actix_validated_forms::form::ValidatedForm;
+///
 /// async fn route(
 ///     form: ValidatedForm<ExampleForm>,
 /// ) -> HttpResponse {

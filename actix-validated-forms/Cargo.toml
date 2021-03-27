@@ -3,6 +3,10 @@ name = "actix_validated_forms"
 version = "0.1.0"
 authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 edition = "2018"
+repository = "https://github.com/jacob-pro/actix-validated-forms"
+homepage = "https://github.com/jacob-pro/actix-validated-forms"
+license = "LGPL-3.0 License"
+description = "Validated xml-urlencoded forms, queries, and multipart form extractors for the Actix Web framework"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -23,6 +27,8 @@ actix-rt = "1.0"
 awc = "1.0"
 actix-multipart-rfc7578 = "0.3.0-rc"
 validator_derive = "0.10.1"
+actix_validated_forms_derive = { optional = false, path = "../actix-validated-forms-derive" }
+
 
 [features]
 derive = ["actix_validated_forms_derive"]

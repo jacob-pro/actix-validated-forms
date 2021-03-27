@@ -2,7 +2,7 @@
 mod tests {
 
     use actix_validated_forms::multipart::{MultipartField, MultipartText, Multiparts};
-    use actix_validated_forms_derive::FromMultipart;
+    use actix_validated_forms::FromMultipart;
     use std::convert::TryFrom;
 
     #[derive(FromMultipart, Debug)]

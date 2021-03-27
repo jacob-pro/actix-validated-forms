@@ -32,4 +32,4 @@ pub use validator;
 extern crate actix_validated_forms_derive;
 #[cfg(feature = "derive")]
 #[doc(hidden)]
-pub use actix_validated_forms_derive::*;
+pub use actix_validated_forms_derive::FromMultipart;

@@ -5,7 +5,7 @@ authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 edition = "2018"
 repository = "https://github.com/jacob-pro/actix-validated-forms"
 homepage = "https://github.com/jacob-pro/actix-validated-forms"
-license = "LGPL-3.0 License"
+license = "LGPL-3.0"
 description = "Derive macro for FromMultipart trait used in actix-validated-forms"
 
 [lib]

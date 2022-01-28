@@ -1,13 +1,12 @@
 # Actix Validated Forms
 
-Validated xml-urlencoded forms, queries, and multipart form extractors for the Actix Web framework, using the
- [Keats/validator](https://github.com/Keats/validator) struct validation trait.
+[![Build status](https://github.com/jacob-pro/actix-validated-forms/actions/workflows/rust.yml/badge.svg)](https://github.com/jacob-pro/actix-validated-forms/actions)
+![maintenance-status](https://img.shields.io/badge/maintenance-deprecated-red.svg)
 
-Note: Currently only supports / tested with Actix web 2.0
+## Deprecation Notice
 
-Download from [Crates.io](https://crates.io/crates/actix_validated_forms):
-```
-actix_validated_forms = { version = "0.1.1", features = ["derive"] }
-```
+This crate is no longer maintained.
 
-All documentation on [docs.rs](https://docs.rs/actix_validated_forms/0.1.1/actix_validated_forms/)
+For validated forms and queries please use [actix-web-validator](https://github.com/rambler-digital-solutions/actix-web-validator).
+
+For multipart forms please use [actix-easy-multipart](https://github.com/jacob-pro/actix-easy-multipart)

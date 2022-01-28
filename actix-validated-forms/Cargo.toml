@@ -1,12 +1,13 @@
 [package]
 name = "actix_validated_forms"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 edition = "2018"
 repository = "https://github.com/jacob-pro/actix-validated-forms"
 homepage = "https://github.com/jacob-pro/actix-validated-forms"
 license = "LGPL-3.0"
 description = "Validated xml-urlencoded forms, queries, and multipart form extractors for the Actix Web framework"
+readme = "../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,7 +21,7 @@ validator = "0.10.1"
 tempfile = "3.1.0"
 mime = "0.3.16"
 err-derive = "0.2.4"
-actix_validated_forms_derive = { version = "0.1.0", optional = true, path = "../actix-validated-forms-derive" }
+actix_validated_forms_derive = { version = "0.1.1", optional = true, path = "../actix-validated-forms-derive" }
 
 [dev-dependencies]
 actix-rt = "1.0"

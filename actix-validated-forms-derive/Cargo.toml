@@ -1,12 +1,13 @@
 [package]
 name = "actix_validated_forms_derive"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jacob Halsey <jacob@jhalsey.com>"]
 edition = "2018"
 repository = "https://github.com/jacob-pro/actix-validated-forms"
 homepage = "https://github.com/jacob-pro/actix-validated-forms"
 license = "LGPL-3.0"
 description = "Derive macro for FromMultipart trait used in actix-validated-forms"
+readme = "../README.md"
 
 [lib]
 proc-macro = true
